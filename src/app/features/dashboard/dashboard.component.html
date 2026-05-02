@@ -1,0 +1,98 @@
+<div class="space-y-6">
+      <!-- Header con resumen -->
+      <div class="bg-gradient-to-br from-rose-600 to-pink-700 rounded-3xl p-6 text-white shadow-lg">
+        <p class="text-rose-200 text-sm font-medium mb-1">Total histórico pendiente</p>
+        <p class="text-3xl font-bold font-serif">
+          {{ totalPendienteGlobal() | currency:'CLP':'symbol-narrow':'1.0-0' }}
+        </p>
+        <p class="text-rose-200 text-xs mt-2">{{ supabase.diasConVentas().length }} días con ventas</p>
+      </div>
+
+      <!-- Botón Nueva Venta -->
+      <button
+        (click)="mostrarCalendario.set(true)"
+        class="w-full py-4 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white font-bold text-lg rounded-2xl transition-colors shadow-md flex items-center justify-center gap-3"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+        </svg>
+        Nueva Venta
+      </button>
+
+      <!-- Modal Calendario -->
+      @if (mostrarCalendario()) {
+        <div class="fixed inset-0 bg-black/50 z-50 flex items-end justify-center p-0"
+          (click)="mostrarCalendario.set(false)">
+          <div class="bg-white w-full max-w-lg rounded-t-3xl p-6 shadow-2xl"
+            (click)="$event.stopPropagation()">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-lg font-bold text-gray-800">Elegir fecha</h2>
+              <button (click)="mostrarCalendario.set(false)" class="text-gray-400 p-1">✕</button>
+            </div>
+            <input
+              type="date"
+              [value]="fechaSeleccionada()"
+              (change)="onFechaChange($event)"
+              class="w-full px-4 py-3 text-lg border border-rose-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-rose-400 mb-4"
+            />
+            <button
+              (click)="irAFecha()"
+              class="w-full py-4 bg-rose-600 text-white font-bold text-lg rounded-xl"
+            >
+              Ver productos del día
+            </button>
+          </div>
+        </div>
+      }
+
+      <!-- Lista de días -->
+      <div>
+        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Días con ventas</h2>
+
+        @if (supabase.loading()) {
+          <div class="space-y-3">
+            @for (i of [1,2,3]; track i) {
+              <div class="h-24 bg-white rounded-2xl animate-pulse"></div>
+            }
+          </div>
+        } @else if (supabase.diasConVentas().length === 0) {
+          <div class="text-center py-12 text-gray-400">
+            <div class="text-5xl mb-3">🍰</div>
+            <p class="font-medium">No hay ventas aún</p>
+            <p class="text-sm mt-1">Crea tu primera venta</p>
+          </div>
+        } @else {
+          <div class="space-y-3">
+            @for (dia of supabase.diasConVentas(); track dia.fecha) {
+              <button
+                (click)="irADia(dia.fecha)"
+                class="w-full bg-white rounded-2xl p-4 shadow-sm border border-rose-50 hover:border-rose-200 hover:shadow-md transition-all text-left active:bg-rose-50"
+              >
+                <div class="flex items-start justify-between">
+                  <div>
+                    <p class="font-bold text-gray-800 text-base">
+                      {{ dia.fecha | date:'EEEE d \'de\' MMMM':'':'es-CL' | titlecase }}
+                    </p>
+                    <p class="text-gray-400 text-xs mt-0.5">{{ dia.cantidad_ventas }} venta(s)</p>
+                  </div>
+                  <div class="text-right">
+                    <p class="font-bold text-gray-800">
+                      {{ dia.total_ventas | currency:'CLP':'symbol-narrow':'1.0-0' }}
+                    </p>
+                    @if (dia.saldo_pendiente > 0) {
+                      <span class="inline-block mt-1 text-xs font-semibold bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
+                        Pendiente: {{ dia.saldo_pendiente | currency:'CLP':'symbol-narrow':'1.0-0' }}
+                      </span>
+                    } @else {
+                      <span class="inline-block mt-1 text-xs font-semibold bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
+                        ✓ Pagado
+                      </span>
+                    }
+                  </div>
+                </div>
+              </button>
+            }
+          </div>
+        }
+      </div>
+    </div>

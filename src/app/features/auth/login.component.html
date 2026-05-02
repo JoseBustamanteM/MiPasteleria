@@ -1,0 +1,61 @@
+<div class="min-h-screen bg-gradient-to-br from-rose-50 to-pink-100 flex items-center justify-center p-6">
+      <div class="w-full max-w-sm">
+        <!-- Logo -->
+        <div class="text-center mb-8">
+          <div class="text-6xl mb-3">🎂</div>
+          <h1 class="text-3xl font-bold text-rose-700 font-serif">Mi Pastelería</h1>
+          <p class="text-rose-400 mt-1 text-sm">Gestión de ventas</p>
+        </div>
+
+        <!-- Card -->
+        <div class="bg-white rounded-3xl shadow-xl p-8">
+          @if (supabase.error()) {
+            <div class="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
+              {{ supabase.error() }}
+            </div>
+          }
+
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-semibold text-gray-600 mb-2">Correo</label>
+              <input
+                type="email"
+                [(ngModel)]="email"
+                placeholder="tu@correo.com"
+                class="w-full px-4 py-3 rounded-xl border border-rose-200 focus:outline-none focus:ring-2 focus:ring-rose-400 text-base"
+              />
+            </div>
+
+            <div>
+              <label class="block text-sm font-semibold text-gray-600 mb-2">Contraseña</label>
+              <input
+                type="password"
+                [(ngModel)]="password"
+                (keyup.enter)="signIn()"
+                placeholder="••••••••"
+                class="w-full px-4 py-3 rounded-xl border border-rose-200 focus:outline-none focus:ring-2 focus:ring-rose-400 text-base"
+              />
+            </div>
+
+            <button
+              (click)="signIn()"
+              [disabled]="supabase.loading()"
+              class="w-full py-4 bg-rose-600 hover:bg-rose-700 text-white font-bold text-lg rounded-xl transition-colors shadow-md disabled:opacity-50 mt-2"
+            >
+              @if (supabase.loading()) {
+                <span class="flex items-center justify-center gap-2">
+                  <svg class="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                    <path class="opacity-75" fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                  </svg>
+                  Entrando...
+                </span>
+              } @else {
+                Ingresar
+              }
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>

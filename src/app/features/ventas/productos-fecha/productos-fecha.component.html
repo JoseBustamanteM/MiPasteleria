@@ -1,0 +1,85 @@
+<div class="space-y-5">
+      <!-- Back + Title -->
+      <div class="flex items-center gap-3">
+        <button (click)="router.navigate(['/dashboard'])"
+          class="p-2.5 rounded-xl bg-white shadow-sm border border-rose-100 active:bg-rose-50">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <div>
+          <h1 class="text-lg font-bold text-gray-800 capitalize">
+            {{ fecha | date:"EEEE d 'de' MMMM":'':'es-CL' }}
+          </h1>
+          <p class="text-xs text-gray-400">Elige un producto para ver sus ventas</p>
+        </div>
+      </div>
+
+      <!-- Resumen del día -->
+      @if (resumenDia()) {
+        <div class="grid grid-cols-3 gap-3">
+          <div class="bg-white rounded-2xl p-3 text-center shadow-sm border border-rose-50">
+            <p class="text-xs text-gray-400 mb-1">Total</p>
+            <p class="font-bold text-gray-800 text-sm">
+              {{ resumenDia()!.total | currency:'CLP':'symbol-narrow':'1.0-0' }}
+            </p>
+          </div>
+          <div class="bg-green-50 rounded-2xl p-3 text-center shadow-sm">
+            <p class="text-xs text-green-500 mb-1">Cobrado</p>
+            <p class="font-bold text-green-700 text-sm">
+              {{ resumenDia()!.cobrado | currency:'CLP':'symbol-narrow':'1.0-0' }}
+            </p>
+          </div>
+          <div class="bg-amber-50 rounded-2xl p-3 text-center shadow-sm">
+            <p class="text-xs text-amber-500 mb-1">Pendiente</p>
+            <p class="font-bold text-amber-700 text-sm">
+              {{ resumenDia()!.pendiente | currency:'CLP':'symbol-narrow':'1.0-0' }}
+            </p>
+          </div>
+        </div>
+      }
+
+      <!-- Lista de productos -->
+      <div>
+        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Productos</h2>
+
+        @if (supabase.loading()) {
+          <div class="space-y-3">
+            @for (i of [1,2,3]; track i) {
+              <div class="h-20 bg-white rounded-2xl animate-pulse"></div>
+            }
+          </div>
+        } @else {
+          <div class="space-y-3">
+            @for (producto of supabase.productosActivos(); track producto.id) {
+              <button
+                (click)="irAProducto(producto)"
+                class="w-full bg-white rounded-2xl p-4 shadow-sm border border-rose-50 hover:border-rose-200 hover:shadow-md transition-all text-left active:bg-rose-50"
+              >
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-3">
+                    <span class="text-2xl">{{ getEmoji(producto.nombre) }}</span>
+                    <div>
+                      <p class="font-semibold text-gray-800">{{ producto.nombre }}</p>
+                      <p class="text-xs text-gray-400">
+                        Precio base: {{ producto.precio_base | currency:'CLP':'symbol-narrow':'1.0-0' }}
+                      </p>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    @if (getVentasProducto(producto.id) > 0) {
+                      <span class="text-xs font-semibold bg-rose-100 text-rose-700 px-2 py-1 rounded-full">
+                        {{ getVentasProducto(producto.id) }} venta(s)
+                      </span>
+                    }
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
+                </div>
+              </button>
+            }
+          </div>
+        }
+      </div>
+    </div>

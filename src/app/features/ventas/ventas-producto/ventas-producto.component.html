@@ -1,0 +1,236 @@
+<div class="space-y-5">
+      <!-- Back + Title -->
+      <div class="flex items-center gap-3">
+        <button (click)="router.navigate(['/ventas', fecha])"
+          class="p-2.5 rounded-xl bg-white shadow-sm border border-rose-100 active:bg-rose-50">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <div>
+          <h1 class="text-lg font-bold text-gray-800">{{ nombreProducto() }}</h1>
+          <p class="text-xs text-gray-400 capitalize">{{ fecha | date:"EEEE d 'de' MMMM":'':'es-CL' }}</p>
+        </div>
+      </div>
+
+      <!-- Resumen producto del día -->
+      <div class="grid grid-cols-3 gap-3">
+        <div class="bg-white rounded-2xl p-3 text-center shadow-sm border border-rose-50">
+          <p class="text-xs text-gray-400 mb-1">Total</p>
+          <p class="font-bold text-gray-800 text-sm">{{ supabase.totalDiario() | currency:'CLP':'symbol-narrow':'1.0-0' }}</p>
+        </div>
+        <div class="bg-green-50 rounded-2xl p-3 text-center shadow-sm">
+          <p class="text-xs text-green-500 mb-1">Cobrado</p>
+          <p class="font-bold text-green-700 text-sm">{{ supabase.totalRecaudado() | currency:'CLP':'symbol-narrow':'1.0-0' }}</p>
+        </div>
+        <div class="bg-amber-50 rounded-2xl p-3 text-center shadow-sm">
+          <p class="text-xs text-amber-500 mb-1">Pendiente</p>
+          <p class="font-bold text-amber-700 text-sm">{{ supabase.saldoPendiente() | currency:'CLP':'symbol-narrow':'1.0-0' }}</p>
+        </div>
+      </div>
+
+      <!-- Botón agregar venta -->
+      <button (click)="abrirFormulario()"
+        class="w-full py-4 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white font-bold text-lg rounded-2xl shadow-md flex items-center justify-center gap-2 transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+        </svg>
+        Agregar Venta
+      </button>
+
+      <!-- Lista de ventas -->
+      <div>
+        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
+          Ventas ({{ supabase.ventas().length }})
+        </h2>
+
+        @if (supabase.loading()) {
+          <div class="space-y-3">
+            @for (i of [1,2,3]; track i) {
+              <div class="h-28 bg-white rounded-2xl animate-pulse"></div>
+            }
+          </div>
+        } @else if (supabase.ventas().length === 0) {
+          <div class="text-center py-10 text-gray-400">
+            <div class="text-4xl mb-2">📋</div>
+            <p class="font-medium">Sin ventas aún</p>
+            <p class="text-sm mt-1">Agrega la primera venta del día</p>
+          </div>
+        } @else {
+          <div class="space-y-3">
+            @for (venta of supabase.ventas(); track venta.id) {
+              <div class="bg-white rounded-2xl p-4 shadow-sm border border-rose-50">
+                <div class="flex items-start justify-between mb-2">
+                  <div>
+                    <p class="font-semibold text-gray-800">{{ venta.cliente }}</p>
+                    <p class="text-xs text-gray-400">{{ venta.cantidad }} unidad(es)</p>
+                  </div>
+                  <div class="text-right">
+                    <p class="font-bold text-gray-800">
+                      {{ venta.valor_total | currency:'CLP':'symbol-narrow':'1.0-0' }}
+                    </p>
+                    <span [class]="getBadgeClass(venta.estado_pago)"
+                      class="inline-block text-xs font-semibold px-2 py-0.5 rounded-full mt-1">
+                      {{ getLabelEstado(venta.estado_pago) }}
+                    </span>
+                  </div>
+                </div>
+
+                @if (venta.estado_pago === 'parcial') {
+                  <div class="mt-2 pt-2 border-t border-rose-50 flex justify-between text-xs">
+                    <span class="text-gray-400">Recibido: {{ venta.monto_recibido | currency:'CLP':'symbol-narrow':'1.0-0' }}</span>
+                    <span class="text-amber-600 font-medium">Saldo: {{ venta.saldo_pendiente | currency:'CLP':'symbol-narrow':'1.0-0' }}</span>
+                  </div>
+                }
+
+                <!-- Acciones -->
+                <div class="mt-3 pt-2 border-t border-rose-50 flex gap-2">
+                  <button (click)="editarVenta(venta)"
+                    class="flex-1 py-2 text-sm font-medium text-rose-600 hover:bg-rose-50 rounded-xl transition-colors">
+                    Editar
+                  </button>
+                  <button (click)="confirmarEliminar(venta)"
+                    class="flex-1 py-2 text-sm font-medium text-red-400 hover:bg-red-50 rounded-xl transition-colors">
+                    Eliminar
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Modal Formulario Venta -->
+      @if (mostrarFormulario()) {
+        <div class="fixed inset-0 bg-black/50 z-50 flex items-end justify-center"
+          (click)="cerrarFormulario()">
+          <div class="bg-white w-full max-w-lg rounded-t-3xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto"
+            (click)="$event.stopPropagation()">
+
+            <div class="flex items-center justify-between mb-5">
+              <h2 class="text-xl font-bold text-gray-800">
+                {{ ventaEditando() ? 'Editar Venta' : 'Nueva Venta' }}
+              </h2>
+              <button (click)="cerrarFormulario()" class="text-gray-400 p-1 text-xl">✕</button>
+            </div>
+
+            @if (supabase.error()) {
+              <div class="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
+                {{ supabase.error() }}
+              </div>
+            }
+
+            <div class="space-y-4">
+              <!-- Cliente -->
+              <div>
+                <label class="block text-sm font-semibold text-gray-600 mb-2">Cliente *</label>
+                <input type="text" [(ngModel)]="form.cliente" placeholder="Nombre del cliente"
+                  class="w-full px-4 py-3 text-base rounded-xl border border-rose-200 focus:outline-none focus:ring-2 focus:ring-rose-400" />
+              </div>
+
+              <!-- Cantidad -->
+              <div>
+                <label class="block text-sm font-semibold text-gray-600 mb-2">Cantidad *</label>
+                <input type="number" [(ngModel)]="form.cantidad" placeholder="1" min="1"
+                  class="w-full px-4 py-3 text-base rounded-xl border border-rose-200 focus:outline-none focus:ring-2 focus:ring-rose-400" />
+              </div>
+
+              <!-- Valor Total -->
+              <div>
+                <label class="block text-sm font-semibold text-gray-600 mb-2">Valor Total (CLP) *</label>
+                <input type="number" [(ngModel)]="form.valor_total" placeholder="0" min="0"
+                  class="w-full px-4 py-3 text-base rounded-xl border border-rose-200 focus:outline-none focus:ring-2 focus:ring-rose-400" />
+              </div>
+
+              <!-- Estado de Pago -->
+              <div>
+                <label class="block text-sm font-semibold text-gray-600 mb-3">Estado de Pago</label>
+                <div class="space-y-2">
+                  <!-- Pagado Completo -->
+                  <label class="flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-colors"
+                    [class]="form.estado_pago === 'completo' ? 'border-green-400 bg-green-50' : 'border-gray-200'">
+                    <input type="radio" [(ngModel)]="form.estado_pago" value="completo" class="accent-green-500 w-5 h-5" />
+                    <div>
+                      <p class="font-semibold text-gray-800">✅ Pagado Completo</p>
+                      <p class="text-xs text-gray-400">El cliente pagó el total</p>
+                    </div>
+                  </label>
+
+                  <!-- Pago Parcial -->
+                  <label class="flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-colors"
+                    [class]="form.estado_pago === 'parcial' ? 'border-amber-400 bg-amber-50' : 'border-gray-200'">
+                    <input type="radio" [(ngModel)]="form.estado_pago" value="parcial" class="accent-amber-500 w-5 h-5" />
+                    <div>
+                      <p class="font-semibold text-gray-800">🔶 Pago Parcial</p>
+                      <p class="text-xs text-gray-400">Pagó solo una parte</p>
+                    </div>
+                  </label>
+
+                  <!-- Pendiente -->
+                  <label class="flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-colors"
+                    [class]="form.estado_pago === 'pendiente' ? 'border-red-400 bg-red-50' : 'border-gray-200'">
+                    <input type="radio" [(ngModel)]="form.estado_pago" value="pendiente" class="accent-red-500 w-5 h-5" />
+                    <div>
+                      <p class="font-semibold text-gray-800">🔴 Pendiente</p>
+                      <p class="text-xs text-gray-400">Sin pago aún</p>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Monto Recibido (solo si es parcial) -->
+              @if (form.estado_pago === 'parcial') {
+                <div class="animate-in">
+                  <label class="block text-sm font-semibold text-gray-600 mb-2">Monto Recibido (CLP) *</label>
+                  <input type="number" [(ngModel)]="form.monto_recibido" placeholder="0" min="0"
+                    [max]="form.valor_total"
+                    class="w-full px-4 py-3 text-base rounded-xl border border-amber-300 bg-amber-50 focus:outline-none focus:ring-2 focus:ring-amber-400" />
+                  @if (form.monto_recibido && form.valor_total) {
+                    <p class="text-xs text-amber-600 mt-1">
+                      Saldo pendiente: {{ (form.valor_total - form.monto_recibido) | currency:'CLP':'symbol-narrow':'1.0-0' }}
+                    </p>
+                  }
+                </div>
+              }
+
+              <!-- Botón Guardar -->
+              <button (click)="guardarVenta()"
+                [disabled]="supabase.loading() || !formValido"
+                class="w-full py-4 bg-rose-600 hover:bg-rose-700 text-white font-bold text-lg rounded-xl shadow-md disabled:opacity-40 transition-colors mt-2">
+                @if (supabase.loading()) {
+                  Guardando...
+                } @else {
+                  {{ ventaEditando() ? 'Actualizar Venta' : 'Guardar Venta' }}
+                }
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Modal Confirmar Eliminar -->
+      @if (ventaAEliminar()) {
+        <div class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-6">
+          <div class="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl">
+            <div class="text-center mb-5">
+              <div class="text-4xl mb-3">🗑️</div>
+              <h3 class="text-lg font-bold text-gray-800">¿Eliminar venta?</h3>
+              <p class="text-sm text-gray-400 mt-1">
+                Venta de <strong>{{ ventaAEliminar()!.cliente }}</strong> por
+                {{ ventaAEliminar()!.valor_total | currency:'CLP':'symbol-narrow':'1.0-0' }}
+              </p>
+            </div>
+            <div class="flex gap-3">
+              <button (click)="ventaAEliminar.set(null)"
+                class="flex-1 py-3 font-semibold text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors">
+                Cancelar
+              </button>
+              <button (click)="eliminarVenta()"
+                class="flex-1 py-3 font-semibold text-white bg-red-500 rounded-xl hover:bg-red-600 transition-colors">
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
