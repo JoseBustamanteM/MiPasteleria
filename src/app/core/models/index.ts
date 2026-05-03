@@ -24,9 +24,11 @@ export interface Venta {
   saldo_pendiente: number; // computed
   created_at: string;
   updated_at: string;
+  metodo_pago: MetodoPago;
 }
 
 export type EstadoPago = 'pendiente' | 'parcial' | 'completo';
+export type MetodoPago = 'efectivo' | 'transferencia';
 
 export interface VentaFormData {
   cliente: string;
@@ -34,6 +36,7 @@ export interface VentaFormData {
   valor_total: number;
   estado_pago: EstadoPago;
   monto_recibido: number | null;
+  metodo_pago: MetodoPago;
 }
 
 export interface DiaConVentas {
@@ -69,3 +72,5 @@ export interface ApiResponse<T> {
   data: T | null;
   error: SupabaseError | null;
 }
+
+

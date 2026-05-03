@@ -213,7 +213,8 @@ export class SupabaseService {
       cantidad: form.cantidad,
       valor_total: form.valor_total,
       estado_pago: form.estado_pago,
-      monto_recibido: form.estado_pago === 'parcial' ? form.monto_recibido : null
+      monto_recibido: form.estado_pago === 'parcial' ? form.monto_recibido : null,
+      metodo_pago: form.metodo_pago
     };
 
     const { data, error } = await this.supabase
@@ -236,7 +237,8 @@ export class SupabaseService {
       valor_total: form.valor_total,
       estado_pago: form.estado_pago,
       monto_recibido: form.estado_pago === 'parcial' ? form.monto_recibido : null,
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
+      metodo_pago: form.metodo_pago
     };
 
     const { data, error } = await this.supabase

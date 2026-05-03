@@ -28,7 +28,8 @@ export class VentasProductoComponent implements OnInit {
     cantidad: 1,
     valor_total: 0,
     estado_pago: 'completo',
-    monto_recibido: null
+    monto_recibido: null,
+    metodo_pago: 'efectivo'
   };
 
   nombreProducto = computed(() => {
@@ -66,7 +67,8 @@ export class VentasProductoComponent implements OnInit {
       cantidad: venta.cantidad,
       valor_total: venta.valor_total,
       estado_pago: venta.estado_pago,
-      monto_recibido: venta.monto_recibido
+      monto_recibido: venta.monto_recibido,
+      metodo_pago: venta.metodo_pago
     };
     this.supabase.limpiarError();
     this.mostrarFormulario.set(true);
@@ -106,7 +108,8 @@ export class VentasProductoComponent implements OnInit {
       cantidad: 1,
       valor_total: 0,
       estado_pago: 'completo',
-      monto_recibido: null
+      monto_recibido: null,
+      metodo_pago: 'efectivo'
     };
   }
 
