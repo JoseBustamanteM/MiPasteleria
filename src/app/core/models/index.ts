@@ -25,6 +25,7 @@ export interface Venta {
   created_at: string;
   updated_at: string;
   metodo_pago: MetodoPago;
+  entregado: boolean;
 }
 
 export type EstadoPago = 'pendiente' | 'parcial' | 'completo';
@@ -37,6 +38,7 @@ export interface VentaFormData {
   estado_pago: EstadoPago;
   monto_recibido: number | null;
   metodo_pago: MetodoPago;
+  entregado: boolean;
 }
 
 export interface DiaConVentas {

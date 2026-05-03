@@ -48,6 +48,12 @@ export class ProductosFechaComponent implements OnInit {
     return this.ventasPorProducto.get(productoId) ?? 0;
   }
 
+  getUnidadesProducto(productoId: string): number {
+  return this.supabase.ventas()
+    .filter(v => v.producto_id === productoId)
+    .reduce((sum, v) => sum + v.cantidad, 0);
+}
+
   getEmoji(nombre: string): string {
     const n = nombre.toLowerCase();
     if (n.includes('limón') || n.includes('limon')) return '🍋';
