@@ -37,7 +37,12 @@ export const routes: Routes = [
         path: 'catalogo',
         loadComponent: () =>
           import('./features/catalogo/catalogo.component').then(m => m.CatalogoComponent)
-      }
+      },
+      {
+        path: 'clientes',
+        loadComponent: () =>
+          import('./features/clientes/clientes.component').then(m => m.ClientesComponent)
+}
     ]
   },
   { path: '**', redirectTo: '' }

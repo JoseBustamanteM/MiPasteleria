@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal, computed } from '@angular/core';
+import { Component, inject, OnInit, signal, computed, ViewChild, ElementRef } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -18,45 +18,64 @@ export class VentasProductoComponent implements OnInit {
 
   fecha = '';
   productoId = '';
+  busquedaCliente = signal('');
+  mostrarSelectorCliente = signal(false);
+
+  clientesFiltrados = computed(() =>
+  this.supabase.clientesActivos().filter(c =>
+    c.nombre.toLowerCase().includes(this.busquedaCliente().toLowerCase())
+  )
+);
 
   mostrarFormulario = signal(false);
   ventaEditando = signal<Venta | null>(null);
   ventaAEliminar = signal<Venta | null>(null);
 
+  @ViewChild('inputBusqueda') inputBusqueda!: ElementRef;
+
   totalUnidades = computed(() =>
   this.supabase.ventas().reduce((sum, v) => sum + v.cantidad, 0)
 );
 
+seleccionarCliente(cliente: any) {
+      this.form.cliente = cliente.nombre;
+      this.form.cliente_id = cliente.id;
+      this.mostrarSelectorCliente.set(false);
+      this.busquedaCliente.set('');
+    }
+
   form: VentaFormData = {
-    cliente: '',
-    cantidad: 1,
-    valor_total: 0,
-    estado_pago: 'pendiente',
-    monto_recibido: null,
-    metodo_pago: 'efectivo',
-    entregado: false
-  };
+  cliente: '',
+  cliente_id: null,
+  cantidad: 1,
+  valor_total: 0,
+  estado_pago: 'pendiente',
+  monto_recibido: null,
+  metodo_pago: 'efectivo',
+  entregado: false
+};
 
   nombreProducto = computed(() => {
     const producto = this.supabase.productos().find(p => p.id === this.productoId);
     return producto?.nombre ?? 'Producto';
   });
 
-  formValido(): boolean {
+  get formValido(): boolean {
   const f = this.form;
-  if (!f.cliente.trim() || !f.cantidad || !f.valor_total) return false;
+  if (!f.cliente_id || !f.cantidad || !f.valor_total) return false;
   if (f.estado_pago === 'parcial' && (!f.monto_recibido || f.monto_recibido <= 0)) return false;
   return true;
 }
 
   async ngOnInit() {
-    this.fecha = this.route.snapshot.paramMap.get('fecha') ?? '';
-    this.productoId = this.route.snapshot.paramMap.get('productoId') ?? '';
-    await Promise.all([
-      this.supabase.cargarProductos(),
-      this.supabase.cargarVentasPorFechaYProducto(this.fecha, this.productoId)
-    ]);
-  }
+  this.fecha = this.route.snapshot.paramMap.get('fecha') ?? '';
+  this.productoId = this.route.snapshot.paramMap.get('productoId') ?? '';
+  await Promise.all([
+    this.supabase.cargarProductos(),
+    this.supabase.cargarClientes(), // ← agregar
+    this.supabase.cargarVentasPorFechaYProducto(this.fecha, this.productoId)
+  ]);
+}
 
   abrirFormulario() {
     this.ventaEditando.set(null);
@@ -65,20 +84,29 @@ export class VentasProductoComponent implements OnInit {
     this.mostrarFormulario.set(true);
   }
 
+  abrirSelectorCliente() {
+  this.mostrarSelectorCliente.set(true);
+  // Espera un tick para que el DOM renderice el input
+  setTimeout(() => {
+    this.inputBusqueda?.nativeElement?.focus();
+  }, 100);
+}
+
   editarVenta(venta: Venta) {
-    this.ventaEditando.set(venta);
-    this.form = {
-      cliente: venta.cliente,
-      cantidad: venta.cantidad,
-      valor_total: venta.valor_total,
-      estado_pago: venta.estado_pago,
-      monto_recibido: venta.monto_recibido,
-      metodo_pago: venta.metodo_pago,
-      entregado: false
-    };
-    this.supabase.limpiarError();
-    this.mostrarFormulario.set(true);
-  }
+  this.ventaEditando.set(venta);
+  this.form = {
+    cliente: venta.cliente,
+    cliente_id: venta.cliente_id ?? null,
+    cantidad: venta.cantidad,
+    valor_total: venta.valor_total,
+    estado_pago: venta.estado_pago,
+    monto_recibido: venta.monto_recibido,
+    metodo_pago: venta.metodo_pago,
+    entregado: venta.entregado
+  };
+  this.supabase.limpiarError();
+  this.mostrarFormulario.set(true);
+}
 
   cerrarFormulario() {
     this.mostrarFormulario.set(false);
@@ -110,14 +138,15 @@ export class VentasProductoComponent implements OnInit {
 
   private resetForm() {
     this.form = {
-      cliente: '',
-      cantidad: 1,
-      valor_total: 0,
-      estado_pago: 'pendiente',
-      monto_recibido: null,
-      metodo_pago: 'efectivo',
-      entregado: false
-    };
+    cliente: '',
+    cliente_id: null,  // ← agregar
+    cantidad: 1,
+    valor_total: 0,
+    estado_pago: 'pendiente',
+    monto_recibido: null,
+    metodo_pago: 'efectivo',
+    entregado: false
+  };
   }
 
   getBadgeClass(estado: EstadoPago): string {

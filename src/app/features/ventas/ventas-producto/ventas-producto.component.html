@@ -140,8 +140,32 @@
               <!-- Cliente -->
               <div>
                 <label class="block text-sm font-semibold text-gray-600 mb-2">Cliente *</label>
-                <input type="text" [(ngModel)]="form.cliente" placeholder="Nombre del cliente"
-                  class="w-full px-4 py-3 text-base rounded-xl border border-rose-200 focus:outline-none focus:ring-2 focus:ring-rose-400" />
+                <button type="button" (click)="abrirSelectorCliente()"
+                  class="w-full px-4 py-3 text-left rounded-xl border border-rose-200 bg-white">
+                  {{ form.cliente || 'Seleccionar cliente...' }}
+                </button>
+
+                @if (mostrarSelectorCliente()) {
+                  <div class="fixed inset-0 bg-black/50 z-[60] flex items-end justify-center" (click)="mostrarSelectorCliente.set(false)">
+                    <div class="bg-white w-full max-w-lg rounded-t-3xl p-4 shadow-2xl max-h-[70vh] flex flex-col" (click)="$event.stopPropagation()">
+                      <div class="flex items-center justify-between mb-3">
+                        <h3 class="font-bold text-gray-800">Seleccionar Cliente</h3>
+                        <button (click)="mostrarSelectorCliente.set(false)" class="text-gray-400">✕</button>
+                      </div>
+                      <input #inputBusqueda type="text" [ngModel]="busquedaCliente()" (ngModelChange)="busquedaCliente.set($event)"
+                        placeholder="Buscar..." class="w-full px-4 py-2.5 rounded-xl border border-rose-200 focus:outline-none focus:ring-2 focus:ring-rose-400 mb-3" />
+                      <div class="overflow-y-auto flex-1 space-y-2">
+                        @for (c of clientesFiltrados(); track c.id) {
+                          <button (click)="seleccionarCliente(c)"
+                            class="w-full text-left px-4 py-3 rounded-xl hover:bg-rose-50 transition-colors border border-gray-100">
+                            <p class="font-medium text-gray-800">{{ c.nombre }}</p>
+                            @if (c.telefono) { <p class="text-xs text-gray-400">{{ c.telefono }}</p> }
+                          </button>
+                        }
+                      </div>
+                    </div>
+                  </div>
+                }
               </div>
 
               <!-- Cantidad -->

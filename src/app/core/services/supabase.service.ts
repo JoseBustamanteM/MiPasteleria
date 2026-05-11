@@ -1,7 +1,7 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { createClient, SupabaseClient, AuthSession } from '@supabase/supabase-js';
 import { environment } from '../../../environments/environment';
-import { Producto, Venta, VentaFormData, DiaConVentas } from '../models';
+import { Producto, Venta, VentaFormData, DiaConVentas, Cliente, ClienteResumen } from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class SupabaseService {
@@ -25,6 +25,12 @@ export class SupabaseService {
   // Computed - Totales en tiempo real
   readonly totalDiario = computed(() =>
     this.ventas().reduce((sum, v) => sum + v.valor_total, 0)
+  );
+
+  // Clientes
+  readonly clientes = signal<Cliente[]>([]);
+  readonly clientesActivos = computed(() =>
+    this.clientes().filter(c => c.activo)
   );
 
   readonly totalRecaudado = computed(() =>
@@ -210,6 +216,7 @@ export class SupabaseService {
       fecha,
       producto_id: productoId,
       cliente: form.cliente,
+      cliente_id: form.cliente_id,
       cantidad: form.cantidad,
       valor_total: form.valor_total,
       estado_pago: form.estado_pago,
@@ -234,6 +241,7 @@ export class SupabaseService {
   async actualizarVenta(id: string, form: VentaFormData): Promise<boolean> {
     const payload = {
       cliente: form.cliente,
+      cliente_id: form.cliente_id,
       cantidad: form.cantidad,
       valor_total: form.valor_total,
       estado_pago: form.estado_pago,
@@ -267,6 +275,72 @@ export class SupabaseService {
     this.ventas.update(prev => prev.filter(v => v.id !== id));
     return true;
   }
+
+  async cargarClientes() {
+  const { data, error } = await this.supabase
+    .from('clientes')
+    .select('*')
+    .order('nombre');
+  if (error) { this.error.set(error.message); return; }
+  this.clientes.set(data ?? []);
+}
+
+async crearCliente(cliente: Partial<Cliente>): Promise<Cliente | null> {
+  const { data, error } = await this.supabase
+    .from('clientes')
+    .insert(cliente)
+    .select()
+    .single();
+  if (error) { this.error.set(error.message); return null; }
+  this.clientes.update(prev => [...prev, data].sort((a,b) => a.nombre.localeCompare(b.nombre)));
+  return data;
+}
+
+async actualizarCliente(id: string, updates: Partial<Cliente>): Promise<boolean> {
+  const { error } = await this.supabase
+    .from('clientes')
+    .update({ ...updates, updated_at: new Date().toISOString() })
+    .eq('id', id);
+  if (error) { this.error.set(error.message); return false; }
+  this.clientes.update(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
+  return true;
+}
+
+async cargarResumenClientes(): Promise<ClienteResumen[]> {
+  const { data: ventas, error } = await this.supabase
+    .from('ventas')
+    .select('cliente_id, valor_total, estado_pago, monto_recibido, fecha');
+  if (error) { this.error.set(error.message); return []; }
+
+  return this.clientes().map(c => {
+    const ventasCliente = (ventas ?? []).filter(v => v.cliente_id === c.id);
+    const total_comprado = ventasCliente.reduce((s, v) => s + v.valor_total, 0);
+    const total_pendiente = ventasCliente.reduce((s, v) => {
+      if (v.estado_pago === 'completo') return s;
+      if (v.estado_pago === 'parcial') return s + v.valor_total - (v.monto_recibido ?? 0);
+      return s + v.valor_total;
+    }, 0);
+    const fechas = ventasCliente.map(v => v.fecha).sort();
+    return {
+      ...c,
+      total_comprado,
+      total_pendiente,
+      cantidad_compras: ventasCliente.length,
+      ultima_compra: fechas.at(-1) ?? null,
+      es_frecuente: ventasCliente.length >= 5
+    };
+  });
+}
+
+async cargarVentasPorCliente(clienteId: string): Promise<Venta[]> {
+  const { data, error } = await this.supabase
+    .from('ventas')
+    .select('*, producto:productos(*)')
+    .eq('cliente_id', clienteId)
+    .order('fecha', { ascending: false });
+  if (error) { this.error.set(error.message); return []; }
+  return (data ?? []).map(v => ({ ...v, saldo_pendiente: this.calcularSaldo(v) }));
+}
 
   // ── HELPERS ───────────────────────────────────────────────
 

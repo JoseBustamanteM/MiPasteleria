@@ -26,6 +26,24 @@ export interface Venta {
   updated_at: string;
   metodo_pago: MetodoPago;
   entregado: boolean;
+  cliente_id: string | null;
+  cliente_obj?: Cliente; // para el join
+}
+
+export interface Cliente {
+  id: string;
+  nombre: string;
+  telefono: string | null;
+  email: string | null;
+  notas: string | null;
+  activo: boolean;
+  created_at: string;
+  updated_at: string;
+  // Computed en frontend
+  total_comprado?: number;
+  total_pendiente?: number;
+  cantidad_compras?: number;
+  ultima_compra?: string | null | undefined;
 }
 
 export type EstadoPago = 'pendiente' | 'parcial' | 'completo';
@@ -39,6 +57,7 @@ export interface VentaFormData {
   monto_recibido: number | null;
   metodo_pago: MetodoPago;
   entregado: boolean;
+  cliente_id: string | null;
 }
 
 export interface DiaConVentas {
@@ -75,4 +94,11 @@ export interface ApiResponse<T> {
   error: SupabaseError | null;
 }
 
+export interface ClienteResumen extends Cliente {
+  total_comprado: number;
+  total_pendiente: number;
+  cantidad_compras: number;
+  ultima_compra: string | null | undefined; // ← cambiar
+  es_frecuente: boolean;
+}
 
