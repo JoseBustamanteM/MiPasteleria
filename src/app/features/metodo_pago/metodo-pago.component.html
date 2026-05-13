@@ -1,0 +1,133 @@
+<div class="space-y-5">
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="text-2xl font-bold text-gray-800 font-serif">Métodos de Pago</h1>
+          <p class="text-sm text-gray-400 mt-1">Gestiona tus métodos de pago</p>
+        </div>
+        <button (click)="abrirFormulario()"
+          class="py-2.5 px-4 bg-rose-600 text-white font-bold rounded-xl shadow-md flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          </svg>
+          Nuevo
+        </button>
+      </div>
+
+      <!-- Activos -->
+      <div>
+        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
+          Activos ({{ metodosPagoActivos().length }})
+        </h2>
+        <div class="space-y-3">
+          @for (metodo of metodosPagoActivos(); track metodo.id) {
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-rose-50 flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <span class="text-2xl">{{ metodo.icono }}</span>
+                <p class="font-semibold text-gray-800">{{ metodo.nombre }}</p>
+              </div>
+              <div class="flex gap-2">
+                <button (click)="editarMetodo(metodo)"
+                  class="p-2.5 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                </button>
+                <button (click)="toggleMetodo(metodo.id, false)"
+                  class="p-2.5 rounded-xl bg-gray-50 text-gray-400 hover:bg-gray-100 transition-colors">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                  </svg>
+                </button>
+                <button (click)="confirmarEliminar(metodo)"
+                  class="p-2.5 rounded-xl bg-red-50 text-red-400 hover:bg-red-100 transition-colors">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Inactivos -->
+      @if (inactivos().length > 0) {
+        <div>
+          <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3">
+            Desactivados ({{ inactivos().length }})
+          </h2>
+          <div class="space-y-3">
+            @for (metodo of inactivos(); track metodo.id) {
+              <div class="bg-gray-50 rounded-2xl p-4 border border-gray-100 opacity-60 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <span class="text-2xl">{{ metodo.icono }}</span>
+                  <p class="font-semibold text-gray-500 line-through">{{ metodo.nombre }}</p>
+                </div>
+                <button (click)="toggleMetodo(metodo.id, true)"
+                  class="px-3 py-2 rounded-xl bg-white text-green-600 text-sm font-medium border border-green-200">
+                  Activar
+                </button>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Modal Formulario -->
+      @if (mostrarFormulario()) {
+        <div class="fixed inset-0 bg-black/50 z-50 flex items-end justify-center" (click)="cerrarFormulario()">
+          <div class="bg-white w-full max-w-lg rounded-t-3xl p-6 shadow-2xl" (click)="$event.stopPropagation()">
+            <div class="flex items-center justify-between mb-5">
+              <h2 class="text-xl font-bold text-gray-800">
+                {{ editando() ? 'Editar Método' : 'Nuevo Método de Pago' }}
+              </h2>
+              <button (click)="cerrarFormulario()" class="text-gray-400 text-xl">✕</button>
+            </div>
+            <div class="space-y-4">
+              <div>
+                <label class="block text-sm font-semibold text-gray-600 mb-2">Ícono (emoji)</label>
+                <input type="text" [(ngModel)]="iconoForm" placeholder="💳"
+                  class="w-full px-4 py-3 text-2xl rounded-xl border border-rose-200 focus:outline-none focus:ring-2 focus:ring-rose-400 text-center" />
+              </div>
+              <div>
+                <label class="block text-sm font-semibold text-gray-600 mb-2">Nombre *</label>
+                <input type="text" [(ngModel)]="nombreForm" placeholder="Ej: Mercado Pago"
+                  class="w-full px-4 py-3 rounded-xl border border-rose-200 focus:outline-none focus:ring-2 focus:ring-rose-400" />
+              </div>
+              <button (click)="guardar()" [disabled]="!nombreForm.trim()"
+                class="w-full py-4 bg-rose-600 text-white font-bold text-lg rounded-xl disabled:opacity-40">
+                {{ editando() ? 'Actualizar' : 'Guardar' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Modal Confirmar Eliminar -->
+      @if (metodoAEliminar()) {
+        <div class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-6">
+          <div class="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl">
+            <div class="text-center mb-5">
+              <div class="text-4xl mb-3">🗑️</div>
+              <h3 class="text-lg font-bold text-gray-800">¿Eliminar método?</h3>
+              <p class="text-sm text-gray-400 mt-1">
+                <strong>{{ metodoAEliminar()!.icono }} {{ metodoAEliminar()!.nombre }}</strong>
+              </p>
+            </div>
+            <div class="flex gap-3">
+              <button (click)="metodoAEliminar.set(null)"
+                class="flex-1 py-3 font-semibold text-gray-600 bg-gray-100 rounded-xl">
+                Cancelar
+              </button>
+              <button (click)="eliminar()"
+                class="flex-1 py-3 font-semibold text-white bg-red-500 rounded-xl">
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+    </div>

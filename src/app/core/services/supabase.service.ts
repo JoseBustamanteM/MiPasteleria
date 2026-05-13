@@ -1,7 +1,7 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { createClient, SupabaseClient, AuthSession } from '@supabase/supabase-js';
 import { environment } from '../../../environments/environment';
-import { Producto, Venta, VentaFormData, DiaConVentas, Cliente, ClienteResumen } from '../models';
+import { Producto, Venta, VentaFormData, DiaConVentas, Cliente, ClienteResumen, MetodoPago } from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class SupabaseService {
@@ -43,6 +43,12 @@ export class SupabaseService {
 
   readonly saldoPendiente = computed(() =>
     this.totalDiario() - this.totalRecaudado()
+  );
+
+  // Metodo de pago 
+  readonly metodosPago = signal<MetodoPago[]>([]);
+  readonly metodosPagoActivos = computed(() =>
+    this.metodosPago().filter(m => m.activo)
   );
 
   constructor() {
@@ -221,7 +227,7 @@ export class SupabaseService {
       valor_total: form.valor_total,
       estado_pago: form.estado_pago,
       monto_recibido: form.estado_pago === 'parcial' ? form.monto_recibido : null,
-      metodo_pago: form.metodo_pago,
+      metodo_pago_id: form.estado_pago !== 'pendiente' ? form.metodo_pago_id : null,
       entregado: form.entregado
     };
 
@@ -247,7 +253,7 @@ export class SupabaseService {
       estado_pago: form.estado_pago,
       monto_recibido: form.estado_pago === 'parcial' ? form.monto_recibido : null,
       updated_at: new Date().toISOString(),
-      metodo_pago: form.metodo_pago,
+      metodo_pago_id: form.estado_pago !== 'pendiente' ? form.metodo_pago_id : null,
       entregado: form.entregado
     };
 
@@ -255,7 +261,7 @@ export class SupabaseService {
       .from('ventas')
       .update(payload)
       .eq('id', id)
-      .select('*, producto:productos(*)')
+      .select('*, producto:productos(*), metodo_pago_obj:metodos_pago!ventas_metodo_pago_id_fkey(*)')
       .single();
 
     if (error) { this.error.set(error.message); return false; }
@@ -340,6 +346,62 @@ async cargarVentasPorCliente(clienteId: string): Promise<Venta[]> {
     .order('fecha', { ascending: false });
   if (error) { this.error.set(error.message); return []; }
   return (data ?? []).map(v => ({ ...v, saldo_pendiente: this.calcularSaldo(v) }));
+}
+
+// CRUD Metodo de pago 
+
+async cargarMetodosPago() {
+  const { data, error } = await this.supabase
+    .from('metodos_pago')
+    .select('*')
+    .order('nombre');
+  if (error) { this.error.set(error.message); return; }
+  this.metodosPago.set(data ?? []);
+}
+
+async crearMetodoPago(nombre: string, icono: string): Promise<MetodoPago | null> {
+  const { data, error } = await this.supabase
+    .from('metodos_pago')
+    .insert({ nombre, icono })
+    .select()
+    .single();
+  if (error) { this.error.set(error.message); return null; }
+  this.metodosPago.update(prev => [...prev, data]);
+  return data;
+}
+
+async actualizarMetodoPago(id: string, nombre: string, icono: string): Promise<boolean> {
+  const { error } = await this.supabase
+    .from('metodos_pago')
+    .update({ nombre, icono })
+    .eq('id', id);
+  if (error) { this.error.set(error.message); return false; }
+  this.metodosPago.update(prev =>
+    prev.map(m => m.id === id ? { ...m, nombre, icono } : m)
+  );
+  return true;
+}
+
+async toggleMetodoPago(id: string, activo: boolean): Promise<boolean> {
+  const { error } = await this.supabase
+    .from('metodos_pago')
+    .update({ activo })
+    .eq('id', id);
+  if (error) { this.error.set(error.message); return false; }
+  this.metodosPago.update(prev =>
+    prev.map(m => m.id === id ? { ...m, activo } : m)
+  );
+  return true;
+}
+
+async eliminarMetodoPago(id: string): Promise<boolean> {
+  const { error } = await this.supabase
+    .from('metodos_pago')
+    .delete()
+    .eq('id', id);
+  if (error) { this.error.set(error.message); return false; }
+  this.metodosPago.update(prev => prev.filter(m => m.id !== id));
+  return true;
 }
 
   // ── HELPERS ───────────────────────────────────────────────

@@ -28,6 +28,8 @@ export interface Venta {
   entregado: boolean;
   cliente_id: string | null;
   cliente_obj?: Cliente; // para el join
+  metodo_pago_id: string | null;
+  metodo_pago_obj?: MetodoPago;
 }
 
 export interface Cliente {
@@ -46,8 +48,15 @@ export interface Cliente {
   ultima_compra?: string | null | undefined;
 }
 
+export interface MetodoPago {
+  id: string;
+  nombre: string;
+  icono: string;
+  activo: boolean;
+  created_at: string;
+}
+
 export type EstadoPago = 'pendiente' | 'parcial' | 'completo';
-export type MetodoPago = 'efectivo' | 'transferencia';
 
 export interface VentaFormData {
   cliente: string;
@@ -55,9 +64,10 @@ export interface VentaFormData {
   valor_total: number;
   estado_pago: EstadoPago;
   monto_recibido: number | null;
-  metodo_pago: MetodoPago;
+  metodo_pago_id: string | null;
   entregado: boolean;
   cliente_id: string | null;
+  
 }
 
 export interface DiaConVentas {

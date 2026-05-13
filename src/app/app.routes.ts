@@ -42,7 +42,12 @@ export const routes: Routes = [
         path: 'clientes',
         loadComponent: () =>
           import('./features/clientes/clientes.component').then(m => m.ClientesComponent)
-}
+      },
+      {
+        path: 'metodos-pago',
+        loadComponent: () =>
+          import('./features/metodo_pago/metodo-pago.component').then(m => m.MetodosPagoComponent)
+      }
     ]
   },
   { path: '**', redirectTo: '' }

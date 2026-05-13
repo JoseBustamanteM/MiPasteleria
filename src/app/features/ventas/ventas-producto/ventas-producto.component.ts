@@ -51,7 +51,7 @@ seleccionarCliente(cliente: any) {
   valor_total: 0,
   estado_pago: 'pendiente',
   monto_recibido: null,
-  metodo_pago: 'efectivo',
+  metodo_pago_id: null,
   entregado: false
 };
 
@@ -73,7 +73,8 @@ seleccionarCliente(cliente: any) {
   await Promise.all([
     this.supabase.cargarProductos(),
     this.supabase.cargarClientes(), // ← agregar
-    this.supabase.cargarVentasPorFechaYProducto(this.fecha, this.productoId)
+    this.supabase.cargarVentasPorFechaYProducto(this.fecha, this.productoId),
+    this.supabase.cargarMetodosPago(),
   ]);
 }
 
@@ -101,7 +102,7 @@ seleccionarCliente(cliente: any) {
     valor_total: venta.valor_total,
     estado_pago: venta.estado_pago,
     monto_recibido: venta.monto_recibido,
-    metodo_pago: venta.metodo_pago,
+    metodo_pago_id: venta.metodo_pago_id ?? null,
     entregado: venta.entregado
   };
   this.supabase.limpiarError();
@@ -144,7 +145,7 @@ seleccionarCliente(cliente: any) {
     valor_total: 0,
     estado_pago: 'pendiente',
     monto_recibido: null,
-    metodo_pago: 'efectivo',
+    metodo_pago_id: null,
     entregado: false
   };
   }

@@ -90,11 +90,19 @@
                       {{ venta.entregado ? '📦 Entregado' : '🕐 Sin entregar' }}
                     </span>
 
-                    @if (venta.estado_pago !== 'pendiente') {
-                      <span class="inline-block text-xs font-semibold px-2 py-0.5 rounded-full"
-                        [class]="venta.metodo_pago === 'efectivo' ? 'bg-gray-100 text-gray-600' : 'bg-blue-100 text-blue-600'">
-                        {{ venta.metodo_pago === 'efectivo' ? '💵 Efectivo' : '🏦 Transferencia' }}
-                      </span>
+                   @if (form.estado_pago !== 'pendiente') {
+                      <div>
+                        <label class="block text-sm font-semibold text-gray-600 mb-3">Método de Pago</label>
+                        <div class="grid grid-cols-2 gap-2">
+                          @for (metodo of supabase.metodosPagoActivos(); track metodo.id) {
+                            <label class="flex items-center justify-center gap-2 p-3 rounded-xl border-2 cursor-pointer transition-colors"
+                              [class]="form.metodo_pago_id === metodo.id ? 'border-rose-400 bg-rose-50' : 'border-gray-200'">
+                              <input type="radio" [(ngModel)]="form.metodo_pago_id" [value]="metodo.id" class="accent-rose-500 w-4 h-4" />
+                              <p class="font-semibold text-gray-800 text-sm">{{ metodo.icono }} {{ metodo.nombre }}</p>
+                            </label>
+                          }
+                        </div>
+                      </div>
                     }
 
 
@@ -251,26 +259,18 @@
                 </div>
               }
 
-              @if (form.estado_pago !== 'pendiente') {
+             @if (form.estado_pago !== 'pendiente') {
                 <div>
                   <label class="block text-sm font-semibold text-gray-600 mb-3">Método de Pago</label>
-                  <div class="grid grid-cols-2 gap-3">
-                  <label class="flex  gap-2 p-3 rounded-xl border-2 cursor-pointer transition-colors"
-                    [class]="form.metodo_pago === 'efectivo' ? 'border-rose-400 bg-rose-50' : 'border-gray-200'">
-                    <input type="radio" [(ngModel)]="form.metodo_pago" value="efectivo" class="accent-rose-500 w-4 h-4" />
-                    <p class="font-semibold text-gray-800 text-sm">💵 Efectivo</p>
-                  </label>
-
-                  <label class="flex items-center  gap-2 p-3 rounded-xl border-2 cursor-pointer transition-colors"
-                    [class]="form.metodo_pago === 'transferencia' ? 'border-blue-400 bg-blue-50' : 'border-gray-200'">
-                    <input type="radio" [(ngModel)]="form.metodo_pago" value="transferencia" class="accent-blue-500 w-4 h-4" />
-                    <p class="font-semibold text-gray-800 text-sm">🏦 Transferencia</p>
-                  </label>
-                </div>
-
-
-
-
+                  <div class="grid grid-cols-2 gap-2">
+                    @for (metodo of supabase.metodosPagoActivos(); track metodo.id) {
+                      <label class="flex items-center justify-center gap-2 p-3 rounded-xl border-2 cursor-pointer transition-colors"
+                        [class]="form.metodo_pago_id === metodo.id ? 'border-rose-400 bg-rose-50' : 'border-gray-200'">
+                        <input type="radio" [(ngModel)]="form.metodo_pago_id" [value]="metodo.id" class="accent-rose-500 w-4 h-4" />
+                        <p class="font-semibold text-gray-800 text-sm">{{ metodo.icono }} {{ metodo.nombre }}</p>
+                      </label>
+                    }
+                  </div>
                 </div>
               }
 
